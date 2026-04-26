@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midnight Manor: Eternal Love Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --gold: #e5c158; --gold-light: #fff3cc; --gold-dim: #9e7d2d;
+            --velvet: #4A0404; --midnight: #020212; --glass: rgba(10, 5, 20, 0.75);
+            --neon-gold: 0 0 15px rgba(229, 193, 88, 0.6);
+            --shadow-soft: 0 10px 20px rgba(0,0,0,0.8);
+            --font-main: 'Playfair Display', serif; --font-title: 'Cinzel Decorative', cursive;
+        }
+        
+        body { margin: 0; padding: 0; background: #000; color: white; font-family: var(--font-main); overflow: hidden; user-select: none; }
+        
+        .escenario { 
+            width: 100%; height: 100%; position: relative; transition: 1s;
+            background: 
+                radial-gradient(circle at 50% 50%, transparent 0%, #000 90%),
+                url('https://www.transparenttextures.com/patterns/dark-circles.png'),
+                linear-gradient(to bottom, #1a052e 0%, #050505 80%);
+            background-blend-mode: multiply;
+        }
+
+        .fog { position: fixed; width: 200%; height: 100%; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.25; z-index: 1; animation: drift 120s linear infinite; pointer-events: none; }
+        @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        .pantalla { display: none; width: 100vw; height: 100vh; position: absolute; top:0; left:0; z-index: 10; }
+        .activa { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .panel-cristal { background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(229, 193, 88, 0.3); border-radius: 20px; box-shadow: var(--shadow-soft), var(--neon-gold); }
+
+        .hud { position: absolute; top: 15px; width: 85%; display: flex; justify-content: space-between; padding: 15px 40px; border-radius: 50px; z-index: 100; font-family: var(--font-title); font-size: 1.6rem; font-weight: bold; color: var(--gold); text-shadow: 0 2px 4px black; }
+
+        #combo-display { position: absolute; top: 90px; left: 50%; transform: translateX(-50%) scale(0); font-size: 3.5rem; font-family: var(--font-title); color: #fff; text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055, 0 4px 0 #800; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; }
+        #combo-display.show { transform: translateX(-50%) scale(1); }
+
+        /* TIENDA */
+        #p-tienda { background: radial-gradient(circle, #2a0a4a, #000); overflow-y: auto; }
+        .grid-tienda { display: grid; grid-template-columns: repeat(3, 330px); gap: 25px; margin: 30px; padding-bottom: 60px;}
+        .item-tienda { padding: 30px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;}
+        .item-tienda:hover { transform: translateY(-5px); box-shadow: var(--shadow-soft), 0 0 25px rgba(229, 193, 88, 0.5); }
+        .item-tienda.comprado { border-color: rgba(229, 193, 88, 0.2); background: rgba(229, 193, 88, 0.05); filter: grayscale(0.7); }
+        .item-especial { border-color: #f05; box-shadow: 0 0 20px rgba(255,0,85,0.4), var(--shadow-soft); background: rgba(50,0,20,0.8); }
+        .btn-comprar { width: 100%; padding: 14px; margin-top: 20px; cursor: pointer; border-radius: 10px; background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: black; border: none; font-weight: bold; font-family: var(--font-main); font-size: 1.2rem; transition: 0.3s; box-shadow: inset 0 2px 0 rgba(255,255,255,0.3); }
+        .btn-comprar:hover:not(:disabled) { filter: brightness(1.2) drop-shadow(var(--neon-gold)); }
+        .btn-comprar:disabled { background: #333; color: #777; cursor: not-allowed; }
+
+        /* JUEGO */
+        .alfombra-lujo { position: absolute; bottom: 0; left: 5%; width: 90%; height: 100%; background: linear-gradient(to right, transparent, rgba(100, 0, 0, 0.25), transparent); display: none; z-index: 2; border-left: 2px dashed rgba(229, 193, 88, 0.2); border-right: 2px dashed rgba(229, 193, 88, 0.2); }
+        .salon { position: absolute; left: 15%; top: 25%; width: 65%; height: 50%; display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; z-index: 10; }
+        
+        .mesa { width: 120px; height: 100px; background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.1) 0%, transparent 60%), radial-gradient(circle at 50% 30%, #500, #100); border: 3px solid var(--gold-dim); border-radius: 50%; cursor: pointer; transform: perspective(500px) rotateX(30deg); display: flex; justify-content: center; align-items: center; box-shadow: 0 25px 30px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,0.8); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .mesa::before { content: ''; position: absolute; width: 80%; height: 80%; border-radius: 50%; background: url('https://www.transparenttextures.com/patterns/dark-circles.png'); opacity: 0.3; }
+        .mesa:hover { transform: perspective(500px) rotateX(30deg) translateY(-8px); border-color: var(--gold); box-shadow: 0 30px 40px rgba(0,0,0,1), var(--neon-gold); }
+        .mesa.gold { background: radial-gradient(circle at 50% 30%, #222, #000); border-color: var(--gold); }
+        .mesa.oculta { display: none; }
+
+        #entrada { position: absolute; left: 0; top: 30%; width: 110px; height: 350px; border-right: 2px solid var(--gold-dim); border-radius: 0 30px 30px 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; box-shadow: 10px 0 20px rgba(0,0,0,0.6); }
+        #entrada:hover { background: rgba(229, 193, 88, 0.05); }
+
+        .barra { position: absolute; right: 0; top: 15%; width: 110px; height: 70%; border-left: 3px solid var(--gold-dim); border-radius: 30px 0 0 30px; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; z-index: 5; background: linear-gradient(45deg, #111, #222); box-shadow: -10px 0 30px rgba(0,0,0,0.8); }
+        .plato-ui { width: 70px; height: 70px; font-size: 2.2rem; opacity: 0.15; cursor: pointer; transition: 0.4s; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #000; border: 1px solid rgba(229, 193, 88, 0.2); }
+        .plato-ui.listo { opacity: 1; background: rgba(229, 193, 88, 0.1); border-color: var(--gold); box-shadow: var(--neon-gold); transform: scale(1.1); }
+
+        /* --- NUEVOS AVATARES HERMOSOS (TOKENS) --- */
+        .avatar-token {
+            width: 55px; height: 55px; background: radial-gradient(circle at 30% 30%, #444, #000);
+            border: 2px solid var(--gold-dim); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2.2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 0 10px rgba(229, 193, 88, 0.2);
+            position: relative; overflow: hidden;
+        }
+        /* Reflejo de cristal en el token */
+        .avatar-token::after {
+            content: ''; position: absolute; top: 0; left: -50%; width: 200%; height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.2), transparent);
+            transform: rotate(-20deg); pointer-events: none;
+        }
+
+        #mesero { position: absolute; z-index: 50; transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); filter: drop-shadow(0 10px 10px rgba(0,0,0,0.8)); }
+        .avatar-mesero {
+            width: 65px; height: 65px; background: radial-gradient(circle at 30% 30%, #2a0a4a, #000);
+            border: 3px solid #fff; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 2.5rem;
+            box-shadow: 0 0 20px rgba(255,255,255,0.4), inset 0 0 15px rgba(255,255,255,0.2); position: relative;
+        }
+        #mesero-mano { position: absolute; top: -25px; left: 35px; font-size: 28px; filter: drop-shadow(0 0 10px var(--gold)); z-index: 60;}
+
+        .cliente { position: relative; z-index: 20; display: flex; flex-direction: column; align-items: center; animation: floatIn 0.5s ease-out; }
+        @keyframes floatIn { from { opacity: 0; transform: translateY(-25px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .burbuja { position: absolute; top: -60px; background: rgba(255,255,255,0.98); color: black; border-radius: 12px 12px 12px 0; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #555; box-shadow: 0 8px 15px rgba(0,0,0,0.6); font-size: 1.6rem; font-family: Arial; z-index: 30;}
+        
+        /* SISTEMA DE PACIENCIA */
+        .barra-paciencia { position: absolute; top: -15px; width: 44px; height: 6px; background: #222; border-radius: 4px; overflow: hidden; border: 1px solid black; }
+        .fill-paciencia { height: 100%; width: 100%; background: #00ff88; transition: width 1s linear, background 0.5s, box-shadow 0.5s; box-shadow: 0 0 5px #00ff88; }
+
+        .btn-main { padding: 18px 50px; background: rgba(0,0,0,0.8); color: var(--gold); border: 2px solid var(--gold); font-size: 1.6rem; cursor: pointer; letter-spacing: 6px; font-family: var(--font-title); transition: 0.3s; border-radius: 40px; box-shadow: 0 5px 15px rgba(0,0,0,0.6); }
+        .btn-main:hover { background: var(--gold); color: black; box-shadow: var(--neon-gold), 0 8px 25px rgba(229, 193, 88, 0.4); transform: translateY(-3px); }
+
+        /* PARTICULAS */
+        .particula { position: absolute; width: 10px; height: 10px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 200; animation: explode 0.9s forwards cubic-bezier(0.1, 0.8, 0.3, 1); box-shadow: var(--neon-gold); }
+        @keyframes explode { 0% { transform: scale(1) translate(0,0); opacity: 1; } 100% { transform: scale(0) translate(var(--tx), var(--ty)); opacity: 0; } }
+        .oro-flotante { position: absolute; color: #fff3cc; font-size: 2.2rem; font-family: var(--font-title); font-weight: bold; animation: subirFade 1.2s forwards; pointer-events: none; text-shadow: 0 2px 8px black; z-index: 100;}
+        @keyframes subirFade { 0% { opacity: 1; transform: translateY(0) scale(0.6); } 50% { transform: translateY(-25px) scale(1.3); } 100% { opacity: 0; transform: translateY(-50px) scale(1); } }
+        
+        /* FINAL SCREEN */
+        #p-final { background: radial-gradient(circle, #3d000d, #000); text-align: center; }
+        .carta-amor { background: rgba(10, 5, 20, 0.7); backdrop-filter: blur(10px); padding: 50px; border: 2px solid var(--gold); border-radius: 30px; max-width: 650px; box-shadow: 0 0 60px rgba(229, 193, 88, 0.5), var(--shadow-soft); margin: 0 20px; animation: scaleUp 0.8s ease-out; }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        .corazon-final { font-size: 5rem; color: #f05; text-shadow: 0 0 20px #f05; animation: latir 1s infinite; margin: 20px 0; }
+        @keyframes latir { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    </style>
+</head>
+<body>
+    <div class="fog"></div>
+
+    <div id="p-inicio" class="pantalla activa escenario">
+        <h1 style="font-size: 5rem; font-family: var(--font-title); color: var(--gold); text-shadow: 0 0 20px var(--gold); text-align: center;">MIDNIGHT MANOR<br><span style="font-size: 1.6rem; letter-spacing: 6px; color: #aaa; font-family: var(--font-main);">ETERNAL LOVE EDITION</span></h1>
+        <button class="btn-main" onclick="initAudio(); irATienda()" style="margin-top: 40px;">INICIAR AVENTURA</button>
+    </div>
+
+    <div id="p-tienda" class="pantalla">
+        <h2 style="font-size: 2.8rem; font-family: var(--font-title); color: var(--gold); text-shadow: 0 0 15px var(--gold); margin-top:40px;">BÓVEDA DE MEJORAS</h2>
+        <h3 style="color: white; font-weight: normal;">FONDOS ACTUALES: <span style="color:var(--gold); font-size:2.2rem; font-weight:bold;">💰<span id="oro-tienda">0</span></span></h3>
+        
+        <div class="grid-tienda">
+            <div class="item-tienda panel-cristal" id="card-suelo">
+                <h3 style="margin:0; color:var(--gold);">Alfombra Carmesí</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">El mesero se desliza un 40% más rápido.</p>
+                <button class="btn-comprar" onclick="comprar('suelo', 400)">400 ORO</button>
+            </div>
+            <div class="item-tienda panel-cristal" id="card-mesa">
+                <h3 style="margin:0; color:var(--gold);">Ampliación VIP</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">Desbloquea 2 mesas adicionales.</p>
+                <button class="btn-comprar" onclick="comprar('mesa', 800)">800 ORO</button>
+            </div>
+            <div class="item-tienda panel-cristal" id="card-gourmet">
+                <h3 style="margin:0; color:var(--gold);">Vajilla de Ónice</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">Propinas aumentan en +💰100.</p>
+                <button class="btn-comprar" onclick="comprar('gourmet', 1200)">1200 ORO</button>
+            </div>
+            <div class="item-tienda panel-cristal" id="card-aura">
+                <h3 style="margin:0; color:var(--gold);">Llamado Oscuro</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">Los clientes llegan mucho más rápido.</p>
+                <button class="btn-comprar" onclick="comprar('aura', 600)">600 ORO</button>
+            </div>
+            <div class="item-tienda panel-cristal" id="card-paciencia">
+                <h3 style="margin:0; color:var(--gold);">Vino Relajante</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">Los clientes esperan el doble de tiempo.</p>
+                <button class="btn-comprar" onclick="comprar('paciencia', 1000)">1000 ORO</button>
+            </div>
+            <div class="item-tienda panel-cristal item-especial" id="card-final">
+                <h3 style="margin:0; color:#ff0055; text-shadow: 0 0 10px #ff0055;">El Secreto del Manor</h3>
+                <p style="font-size: 0.95rem; color:#ccc; font-style:italic;">Descubre la verdadera razón de este lugar.</p>
+                <button class="btn-comprar" style="background: linear-gradient(45deg, #a00, #f05); color:white; border:none; text-shadow: 0 1px 3px black;" onclick="comprarSecreto()">10,000 ORO</button>
+            </div>
+        </div>
+        <button class="btn-main" style="margin-bottom: 50px;" onclick="iniciarTurno()">COMENZAR TURNO</button>
+    </div>
+
+    <div id="p-juego" class="pantalla">
+        <div class="escenario" id="escena">
+            <div id="combo-display">COMBO x2!</div>
+            <div class="alfombra-lujo" id="visual-suelo"></div>
+            
+            <div class="hud panel-cristal">
+                <div>NOCHE <span id="val-noche" style="color:white; font-family:Arial;">1</span></div>
+                <div style="font-size:2rem; letter-spacing:0;">💰<span id="val-oro" style="color:white; font-family:Arial; font-weight:bold;">0</span></div>
+                <div>⏳ <span id="val-reloj" style="color:white; font-family:Arial;">60</span>s</div>
+            </div>
+
+            <div id="mesero" style="left: 50%; top: 50%;">
+                <div class="avatar-mesero">🤵🏻‍♂️</div>
+                <div id="mesero-mano"></div>
+            </div>
+
+            <div id="entrada" class="panel-cristal" onclick="irAEntrada()">
+                <div id="fila" style="display:flex; flex-direction:column; gap:12px;"></div>
+            </div>
+
+            <div class="salon">
+                <div class="mesa" id="m1" onclick="irAMesa('m1')"></div>
+                <div class="mesa" id="m2" onclick="irAMesa('m2')"></div>
+                <div class="mesa" id="m3" onclick="irAMesa('m3')"></div>
+                <div class="mesa" id="m4" onclick="irAMesa('m4')"></div>
+                <div class="mesa oculta" id="m5" onclick="irAMesa('m5')"></div>
+                <div class="mesa oculta" id="m6" onclick="irAMesa('m6')"></div>
+            </div>
+
+            <div class="barra panel-cristal">
+                <div class="plato-ui" id="ui-☕" onclick="tomarBarra('☕')">☕</div>
+                <div class="plato-ui" id="ui-🍷" onclick="tomarBarra('🍷')">🍷</div>
+                <div class="plato-ui" id="ui-🍰" onclick="tomarBarra('🍰')">🍰</div>
+                <div class="plato-ui" id="ui-🥪" onclick="tomarBarra('🥪')">🥪</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="p-final" class="pantalla">
+        <div class="fog"></div>
+        <div class="carta-amor">
+            <h1 style="color: var(--gold); font-family: var(--font-title); font-size: 3rem; margin-top:0; text-shadow: var(--neon-gold);">¡Felicidades mi amor!</h1>
+            <div class="corazon-final">❤️</div>
+            <p style="font-size: 1.6rem; line-height: 1.8; color: white;">
+                Has dominado el Midnight Manor y te has convertido en la mejor administradora de todo el mundo oscuro.<br><br>
+                Tu premio es ser parte de mis aciertos en esta vida.<br><br>
+                Te amo.<br>
+                <span style="font-size: 1.3rem; color: var(--gold); font-weight:bold; font-family:var(--font-title);">By Yeshua Patiño</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- SONIDOS ---
+        let audioCtx;
+        function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playSound(type) {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if(type === 'coin') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+            } else if (type === 'serve') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.11);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.11);
+            } else if (type === 'angry') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(90, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        let tycoon = { oro: 0, noche: 1, velocidad: 0.7, extraOro: 0, spawnRate: 4000, pacienciaLoss: 2 };
+        let game = { tiempo: 60, activo: false, meseroCarga: null, mano: null, timerSpawn: null, timerPaciencia: null, combo: 1, lastServe: 0 };
+        const menu = ["☕", "🍷", "🍰", "🥪"];
+
+        // NUEVOS TOKENS DE PERSONAJES LINDOS Y ELEGANTES
+        const avatares = ["🧛🏻‍♀️", "🧙🏻‍♀️", "🦇", "🐺", "🧛🏻‍♂️", "👻", "🧟‍♀️", "🦉"];
+
+        function irATienda() {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById('p-tienda').classList.add('activa');
+            document.getElementById('oro-tienda').innerText = tycoon.oro;
+        }
+
+        function comprar(item, costo) {
+            if (tycoon.oro >= costo) {
+                tycoon.oro -= costo;
+                let card = document.getElementById('card-'+item);
+                card.classList.add('comprado'); card.querySelector('button').disabled = true; card.querySelector('button').innerText = "ADQUIRIDO";
+                playSound('coin');
+                if(item === 'suelo') { tycoon.velocidad = 0.4; document.getElementById('visual-suelo').style.display = 'block'; }
+                if(item === 'mesa') { document.getElementById('m5').classList.remove('oculta'); document.getElementById('m6').classList.remove('oculta'); }
+                if(item === 'gourmet') { tycoon.extraOro = 100; document.querySelectorAll('.mesa').forEach(m => m.classList.add('gold')); }
+                if(item === 'aura') { tycoon.spawnRate = 2500; }
+                if(item === 'paciencia') { tycoon.pacienciaLoss = 1; }
+                document.getElementById('oro-tienda').innerText = tycoon.oro;
+            } else { alert("Fondos insuficientes."); }
+        }
+
+        function comprarSecreto() {
+            if(tycoon.oro >= 10000) {
+                playSound('coin');
+                document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+                document.getElementById('p-final').classList.add('activa');
+            } else { alert("Te falta oro. Sigue atendiendo la mansión para descubrir el secreto (Cuesta 10,000)."); }
+        }
+
+        function iniciarTurno() {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById('p-juego').classList.add('activa');
+            game.activo = true; game.tiempo = 60; game.combo = 1;
+            document.getElementById('val-oro').innerText = tycoon.oro;
+            document.getElementById('val-noche').innerText = tycoon.noche;
+            document.getElementById('mesero').style.transition = `all ${tycoon.velocidad}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
+            document.getElementById('mesero-mano').innerText = "";
+            game.mano = null;
+
+            const clock = setInterval(() => {
+                if(game.tiempo > 0) {
+                    game.tiempo--; document.getElementById('val-reloj').innerText = game.tiempo;
+                    let hue = Math.max(0, game.tiempo * 1.5);
+                    document.getElementById('escena').style.background = `radial-gradient(circle at 50% 50%, hsl(${hue}, 70%, 15%) 0%, #000 80%)`;
+                } else { clearInterval(clock); clearInterval(game.timerSpawn); clearInterval(game.timerPaciencia); terminarNoche(); }
+            }, 1000);
+
+            game.timerSpawn = setInterval(spawn, tycoon.spawnRate);
+            game.timerPaciencia = setInterval(reducirPaciencia, 500);
+            spawn();
+        }
+
+        function spawn() {
+            const fila = document.getElementById('fila');
+            if(fila.children.length < 4) {
+                const c = document.createElement('div');
+                c.className = 'cliente'; c.dataset.pedido = menu[Math.floor(Math.random()*4)];
+                c.dataset.paciencia = 100;
+                let cara = avatares[Math.floor(Math.random()*avatares.length)];
+                c.innerHTML = `<div class="barra-paciencia"><div class="fill-paciencia"></div></div>
+                               <div class="avatar-token">${cara}</div>`;
+                fila.appendChild(c);
+            }
+        }
+
+        function reducirPaciencia() {
+            document.querySelectorAll('.cliente').forEach(cli => {
+                if(cli.dataset.st !== "come" && cli.dataset.st !== "paga") {
+                    let p = parseInt(cli.dataset.paciencia) - tycoon.pacienciaLoss;
+                    if(p <= 0) {
+                        playSound('angry');
+                        if(cli.parentElement.classList.contains('mesa')) cli.parentElement.innerHTML = "";
+                        else cli.remove();
+                        actualizarCocina();
+                        game.combo = 1;
+                    } else {
+                        cli.dataset.paciencia = p;
+                        let fill = cli.querySelector('.fill-paciencia');
+                        if(fill) {
+                            fill.style.width = p + "%";
+                            if(p < 50) fill.style.background = "yellow";
+                            if(p < 25) fill.style.background = "red";
+                        }
+                    }
+                }
+            });
+        }
+
+        function mover(x, y, cb) {
+            const m = document.getElementById('mesero');
+            m.style.left = x + '%'; m.style.top = y + '%';
+            setTimeout(cb, tycoon.velocidad * 1000);
+        }
+
+        function irAEntrada() {
+            mover(6, 50, () => {
+                const fila = document.getElementById('fila');
+                if(fila.children.length > 0 && !game.meseroCarga) {
+                    game.meseroCarga = fila.children[0];
+                    fila.removeChild(fila.children[0]);
+                    document.getElementById('mesero').style.filter = "drop-shadow(0 0 15px white)";
+                }
+            });
+        }
+
+        function actualizarCocina() {
+            menu.forEach(item => document.getElementById('ui-' + item).classList.remove('listo'));
+            document.querySelectorAll('.mesa .cliente').forEach(cli => {
+                if(cli.dataset.st === "espera") document.getElementById('ui-' + cli.dataset.pedido).classList.add('listo');
+            });
+        }
+
+        function crearParticulas(x, y) {
+            for(let i=0; i<8; i++) {
+                let p = document.createElement('div');
+                p.className = 'particula';
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                p.style.setProperty('--tx', (Math.random() * 100 - 50) + 'px');
+                p.style.setProperty('--ty', (Math.random() * 100 - 50) + 'px');
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 800);
+            }
+        }
+
+        function mostrarCombo() {
+            let d = document.getElementById('combo-display');
+            d.innerText = `COMBO x${game.combo}!`;
+            d.classList.add('show');
+            setTimeout(() => d.classList.remove('show'), 1000);
+        }
+
+        function irAMesa(id) {
+            const mesa = document.getElementById(id);
+            const r = mesa.getBoundingClientRect();
+            mover((r.left/window.innerWidth)*100+2, (r.top/window.innerHeight)*100-3, () => {
+                const cli = mesa.querySelector('.cliente');
+                
+                if(game.meseroCarga && !cli) {
+                    mesa.appendChild(game.meseroCarga); game.meseroCarga = null;
+                    document.getElementById('mesero').style.filter = "none";
+                    setTimeout(() => { 
+                        let c = mesa.querySelector('.cliente');
+                        if(c) { c.innerHTML = `<div class="burbuja">...</div>` + c.innerHTML; c.dataset.st = "pide"; }
+                    }, 1500);
+                } 
+                else if(cli && cli.dataset.st === "pide") {
+                    cli.querySelector('.burbuja').innerText = cli.dataset.pedido; 
+                    cli.dataset.st = "espera";
+                    actualizarCocina();
+                } 
+                else if(cli && cli.dataset.st === "espera" && game.mano === cli.dataset.pedido) {
+                    playSound('serve');
+                    cli.dataset.st = "come"; 
+                    cli.querySelector('.burbuja').innerText = "🍴";
+                    cli.querySelector('.barra-paciencia').style.display = "none";
+                    game.mano = null;
+                    document.getElementById('mesero-mano').innerText = "";
+                    document.getElementById('mesero').style.filter = "none";
+                    actualizarCocina();
+                    
+                    setTimeout(() => { 
+                        if(mesa.contains(cli)) {
+                            cli.dataset.st = "paga"; 
+                            cli.querySelector('.burbuja').innerText = "💳"; 
+                            cli.querySelector('.burbuja').style.borderColor = "#00ff00";
+                        }
+                    }, 3500);
+                } 
+                else if(cli && cli.dataset.st === "paga") {
+                    let now = Date.now();
+                    if(now - game.lastServe < 4000) game.combo++; else game.combo = 1;
+                    game.lastServe = now;
+                    if(game.combo > 1) mostrarCombo();
+
+                    playSound('coin');
+                    crearParticulas(r.left + r.width/2, r.top + r.height/2);
+                    let ganancia = (150 + tycoon.extraOro) * game.combo;
+                    tycoon.oro += ganancia;
+                    document.getElementById('val-oro').innerText = tycoon.oro;
+                    
+                    const txt = document.createElement('div');
+                    txt.className = 'oro-flotante'; txt.innerText = "+💰" + ganancia;
+                    mesa.appendChild(txt);
+                    
+                    mesa.style.boxShadow = "0 0 30px #00ff00";
+                    cli.style.opacity = 0; 
+                    setTimeout(() => { mesa.innerHTML = ""; mesa.style.boxShadow = "0 25px 30px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,0.8)"; }, 1000);
+                }
+            });
+        }
+
+        function tomarBarra(item) {
+            mover(90, 50, () => {
+                if(document.getElementById('ui-' + item).classList.contains('listo')) {
+                    game.mano = item; 
+                    document.getElementById('mesero').style.filter = "drop-shadow(0 0 15px var(--gold))";
+                    document.getElementById('mesero-mano').innerText = item;
+                }
+            });
+        }
+
+        function terminarNoche() {
+            game.activo = false; tycoon.noche++;
+            let msg = `Noche ${tycoon.noche-1} finalizada.\nHaz ganado 💰${tycoon.oro}\n`;
+            if(tycoon.oro >= 10000) msg += "¡Ya tienes suficiente para descubrir el secreto de la mansión!";
+            else msg += "¡Sigue jugando para descubrir el secreto de la mansión!";
+            alert(msg);
+            irATienda();
+        }
+    </script>
+</body>
+</html>
